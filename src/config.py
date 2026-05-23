@@ -12,6 +12,7 @@ OUTPUT_DIR = PROJECT_ROOT / "outputs"
 OUTPUT_CSV_PATH = OUTPUT_DIR / "matched_jobs.csv"
 OUTPUT_MD_PATH = OUTPUT_DIR / "matched_jobs.md"
 GOOGLE_SHEETS_READY_PATH = OUTPUT_DIR / "google_sheets_ready.csv"
+FEEDBACK_PREDICTIONS_PATH = OUTPUT_DIR / "feedback_model_predictions.csv"
 
 REQUIRED_JOB_COLUMNS = [
     "title",
