@@ -12,6 +12,8 @@ DISPLAY_COLUMNS = [
     "location",
     "job_type",
     "similarity_score",
+    "location_penalty",
+    "job_type_penalty",
     "matched_keywords",
     "avoid_keywords_found",
     "link",

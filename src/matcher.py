@@ -1,5 +1,6 @@
 """Job matching logic using TF-IDF, cosine similarity, and simple rules."""
 
+import re
 from typing import Any
 
 import numpy as np
@@ -63,10 +64,16 @@ def find_matching_terms(text: str, terms: list[str]) -> list[str]:
 
     for term in terms:
         cleaned_term = clean_text(term)
-        if cleaned_term and cleaned_term in cleaned_text:
+        if cleaned_term and _contains_term(cleaned_text, cleaned_term):
             matches.append(term)
 
     return matches
+
+
+def _contains_term(cleaned_text: str, cleaned_term: str) -> bool:
+    """Match complete words/phrases so short terms like AI do not match campaign."""
+    pattern = rf"(?<![a-z0-9+#]){re.escape(cleaned_term)}(?![a-z0-9+#])"
+    return bool(re.search(pattern, cleaned_text))
 
 
 def calculate_similarity_scores(profile_text: str, job_texts: pd.Series) -> np.ndarray:
@@ -90,8 +97,10 @@ def score_jobs(profile: dict, jobs: pd.DataFrame) -> pd.DataFrame:
     - 60% TF-IDF cosine similarity between the profile and job text
     - up to 15% bonus for preferred keywords
     - up to 10% bonus for preferred locations
+    - up to 25% penalty for non-preferred required locations
     - up to 10% bonus for matching target roles in the title
     - up to 5% bonus for preferred job type
+    - up to 25% penalty for non-preferred job type
     - up to 20% penalty for avoid keywords
 
     The result is clipped between 0 and 100 for readability.
@@ -123,8 +132,12 @@ def score_jobs(profile: dict, jobs: pd.DataFrame) -> pd.DataFrame:
         keyword_bonus = min(len(matched_keywords) / max(len(like_keywords), 1), 1.0) * 0.15
         avoid_penalty = min(len(avoid_matches) / max(len(avoid_keywords), 1), 1.0) * 0.20
         location_bonus = 0.10 if location_matches else 0.0
+        # A non-preferred required location is a serious blocker because the
+        # candidate cannot realistically attend an on-site role there.
+        location_penalty = 0.25 if not location_matches else 0.0
         role_bonus = 0.10 if role_matches else 0.0
         job_type_bonus = 0.05 if job_type_matches else 0.0
+        job_type_penalty = 0.25 if not job_type_matches else 0.0
 
         raw_score = (
             row["similarity_score"] * 0.60
@@ -132,6 +145,8 @@ def score_jobs(profile: dict, jobs: pd.DataFrame) -> pd.DataFrame:
             + location_bonus
             + role_bonus
             + job_type_bonus
+            - location_penalty
+            - job_type_penalty
             - avoid_penalty
         )
         final_score = float(np.clip(raw_score * 100, 0, 100))
@@ -142,8 +157,10 @@ def score_jobs(profile: dict, jobs: pd.DataFrame) -> pd.DataFrame:
                 "keyword_bonus": round(keyword_bonus * 100, 2),
                 "avoid_penalty": round(avoid_penalty * 100, 2),
                 "location_bonus": round(location_bonus * 100, 2),
+                "location_penalty": round(location_penalty * 100, 2),
                 "role_bonus": round(role_bonus * 100, 2),
                 "job_type_bonus": round(job_type_bonus * 100, 2),
+                "job_type_penalty": round(job_type_penalty * 100, 2),
                 "match_score": round(final_score, 2),
                 "matched_keywords": ", ".join(matched_keywords),
                 "avoid_keywords_found": ", ".join(avoid_matches),

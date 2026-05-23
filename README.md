@@ -95,8 +95,10 @@ final_score =
   60% TF-IDF cosine similarity
   + up to 15% preferred keyword bonus
   + up to 10% preferred location bonus
+  - up to 25% non-preferred required location penalty
   + up to 10% target role/title bonus
   + up to 5% job type preference bonus
+  - up to 25% non-preferred job type penalty
   - up to 20% avoid keyword penalty
 ```
 
@@ -107,6 +109,8 @@ Why this formula works for an MVP:
 - TF-IDF similarity captures overall text relevance.
 - Keyword bonuses reward specific interests like `NLP`, `Python`, or `machine learning`.
 - Avoid penalties reduce matches that contain unwanted terms.
+- Location penalties strongly reduce opportunities in places the candidate cannot realistically attend.
+- Job type penalties strongly reduce roles that are not realistic for the candidate, such as full-time roles when only internships or part-time roles are suitable.
 - Location, role, and job type bonuses make the ranking more personal and practical.
 
 ## How To Run
