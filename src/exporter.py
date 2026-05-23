@@ -6,7 +6,9 @@ import pandas as pd
 
 
 DISPLAY_COLUMNS = [
+    "hybrid_score_v2",
     "match_score",
+    "predicted_relevance_score",
     "title",
     "company",
     "location",
@@ -17,6 +19,7 @@ DISPLAY_COLUMNS = [
     "job_type_penalty",
     "feedback_adjustment",
     "user_feedback",
+    "hybrid_score_note",
     "match_reason",
     "profile_skills_found",
     "missing_skills",
@@ -28,7 +31,9 @@ DISPLAY_COLUMNS = [
 ]
 
 GOOGLE_SHEETS_COLUMNS = [
+    "hybrid_score_v2",
     "match_score",
+    "predicted_relevance_score",
     "user_feedback",
     "notes",
     "title",
@@ -48,6 +53,7 @@ GOOGLE_SHEETS_COLUMNS = [
     "job_type_penalty",
     "avoid_penalty",
     "feedback_adjustment",
+    "hybrid_score_note",
     "match_reason",
     "profile_skills_found",
     "job_skills_found",
