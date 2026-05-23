@@ -107,6 +107,45 @@ def get_feedback_adjustment(feedback_value: str) -> float:
     return FEEDBACK_ADJUSTMENTS.get(normalized_feedback, 0.0)
 
 
+def build_match_reason(
+    matched_keywords: list[str],
+    avoid_matches: list[str],
+    location_matches: list[str],
+    role_matches: list[str],
+    job_type_matches: list[str],
+    feedback_value: str,
+) -> str:
+    """Build a short human-readable explanation for a job score."""
+    reasons = []
+
+    if matched_keywords:
+        top_keywords = ", ".join(matched_keywords[:4])
+        reasons.append(f"Matches preferred keywords: {top_keywords}")
+
+    if location_matches:
+        reasons.append(f"Location fits preference: {location_matches[0]}")
+    else:
+        reasons.append("Location is not in preferred locations")
+
+    if role_matches:
+        reasons.append(f"Title matches target role: {role_matches[0]}")
+
+    if job_type_matches:
+        reasons.append(f"Job type fits preference: {job_type_matches[0]}")
+    else:
+        reasons.append("Job type is not preferred")
+
+    normalized_feedback = clean_text(feedback_value)
+    if normalized_feedback:
+        reasons.append(f"User feedback: {normalized_feedback}")
+
+    if avoid_matches:
+        top_avoid_terms = ", ".join(avoid_matches[:3])
+        reasons.append(f"Contains avoid keywords: {top_avoid_terms}")
+
+    return "; ".join(reasons)
+
+
 def score_jobs(profile: dict, jobs: pd.DataFrame) -> pd.DataFrame:
     """Rank jobs using an explainable hybrid scoring formula.
 
@@ -147,6 +186,14 @@ def score_jobs(profile: dict, jobs: pd.DataFrame) -> pd.DataFrame:
         location_matches = find_matching_terms(location_text, preferred_locations)
         role_matches = find_matching_terms(title_text, target_roles)
         job_type_matches = find_matching_terms(job_type_text, job_type_preferences)
+        match_reason = build_match_reason(
+            matched_keywords=matched_keywords,
+            avoid_matches=avoid_matches,
+            location_matches=location_matches,
+            role_matches=role_matches,
+            job_type_matches=job_type_matches,
+            feedback_value=feedback_value,
+        )
 
         keyword_bonus = min(len(matched_keywords) / max(len(like_keywords), 1), 1.0) * 0.15
         avoid_penalty = min(len(avoid_matches) / max(len(avoid_keywords), 1), 1.0) * 0.20
@@ -184,6 +231,7 @@ def score_jobs(profile: dict, jobs: pd.DataFrame) -> pd.DataFrame:
                 "job_type_penalty": round(job_type_penalty * 100, 2),
                 "feedback_adjustment": round(feedback_adjustment * 100, 2),
                 "match_score": round(final_score, 2),
+                "match_reason": match_reason,
                 "matched_keywords": ", ".join(matched_keywords),
                 "avoid_keywords_found": ", ".join(avoid_matches),
             }

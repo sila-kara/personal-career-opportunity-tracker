@@ -10,7 +10,12 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(PROJECT_ROOT / "src"))
 
-from matcher import find_matching_terms, get_feedback_adjustment, score_jobs
+from matcher import (
+    build_match_reason,
+    find_matching_terms,
+    get_feedback_adjustment,
+    score_jobs,
+)
 from preprocessing import add_clean_text_columns
 
 
@@ -27,6 +32,23 @@ class TestMatcher(unittest.TestCase):
         self.assertEqual(get_feedback_adjustment("Maybe"), 0.03)
         self.assertEqual(get_feedback_adjustment("rejected"), -0.30)
         self.assertEqual(get_feedback_adjustment(""), 0.0)
+
+    def test_build_match_reason_explains_positive_and_negative_signals(self):
+        result = build_match_reason(
+            matched_keywords=["Python", "SQL", "data science"],
+            avoid_matches=["full-time"],
+            location_matches=["Remote"],
+            role_matches=["Data Science Intern"],
+            job_type_matches=["Internship"],
+            feedback_value="liked",
+        )
+
+        self.assertIn("Matches preferred keywords: Python, SQL, data science", result)
+        self.assertIn("Location fits preference: Remote", result)
+        self.assertIn("Title matches target role: Data Science Intern", result)
+        self.assertIn("Job type fits preference: Internship", result)
+        self.assertIn("User feedback: liked", result)
+        self.assertIn("Contains avoid keywords: full-time", result)
 
     def test_score_jobs_applies_location_job_type_and_feedback_effects(self):
         profile = {
@@ -79,6 +101,8 @@ class TestMatcher(unittest.TestCase):
         self.assertEqual(berlin_row["location_penalty"], 25.0)
         self.assertEqual(berlin_row["job_type_penalty"], 25.0)
         self.assertEqual(berlin_row["feedback_adjustment"], -30.0)
+        self.assertIn("Location is not in preferred locations", berlin_row["match_reason"])
+        self.assertIn("Job type is not preferred", berlin_row["match_reason"])
         self.assertGreater(remote_row["match_score"], berlin_row["match_score"])
 
 
