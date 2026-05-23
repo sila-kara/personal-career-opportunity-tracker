@@ -1,8 +1,15 @@
 """Run the Personal Career Opportunity Tracker MVP."""
 
-from config import FEEDBACK_PATH, JOBS_PATH, OUTPUT_CSV_PATH, OUTPUT_MD_PATH, PROFILE_PATH
+from config import (
+    FEEDBACK_PATH,
+    GOOGLE_SHEETS_READY_PATH,
+    JOBS_PATH,
+    OUTPUT_CSV_PATH,
+    OUTPUT_MD_PATH,
+    PROFILE_PATH,
+)
 from data_loader import load_feedback, load_jobs, load_profile, merge_feedback
-from exporter import export_to_csv, export_to_markdown
+from exporter import export_google_sheets_ready_csv, export_to_csv, export_to_markdown
 from matcher import score_jobs
 from preprocessing import add_clean_text_columns
 
@@ -19,11 +26,13 @@ def main() -> None:
 
     export_to_csv(ranked_jobs, OUTPUT_CSV_PATH)
     export_to_markdown(ranked_jobs, OUTPUT_MD_PATH)
+    export_google_sheets_ready_csv(ranked_jobs, GOOGLE_SHEETS_READY_PATH)
 
     print("Career opportunity matching complete.")
     print(f"Jobs processed: {len(ranked_jobs)}")
     print(f"CSV output: {OUTPUT_CSV_PATH}")
     print(f"Markdown output: {OUTPUT_MD_PATH}")
+    print(f"Google Sheets-ready output: {GOOGLE_SHEETS_READY_PATH}")
     print("\nTop matches:")
 
     preview_columns = ["match_score", "title", "company", "location"]

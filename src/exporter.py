@@ -22,11 +22,49 @@ DISPLAY_COLUMNS = [
     "link",
 ]
 
+GOOGLE_SHEETS_COLUMNS = [
+    "match_score",
+    "user_feedback",
+    "notes",
+    "title",
+    "company",
+    "location",
+    "job_type",
+    "date_found",
+    "source",
+    "similarity_score",
+    "keyword_bonus",
+    "location_bonus",
+    "location_penalty",
+    "role_bonus",
+    "job_type_bonus",
+    "job_type_penalty",
+    "avoid_penalty",
+    "feedback_adjustment",
+    "matched_keywords",
+    "avoid_keywords_found",
+    "link",
+]
+
 
 def export_to_csv(jobs: pd.DataFrame, output_path: Path) -> None:
     """Save the full ranked job table as a CSV file."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
     jobs.to_csv(output_path, index=False)
+
+
+def export_google_sheets_ready_csv(jobs: pd.DataFrame, output_path: Path) -> None:
+    """Save a clean CSV that is easy to import into Google Sheets.
+
+    This export intentionally excludes internal NLP columns such as clean_text
+    and combined_text. The feedback columns are kept near the front so the user
+    can update them directly in a spreadsheet.
+    """
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    columns = [col for col in GOOGLE_SHEETS_COLUMNS if col in jobs.columns]
+    sheets_ready_jobs = jobs[columns].copy()
+    sheets_ready_jobs.to_csv(output_path, index=False)
 
 
 def _escape_markdown(value: object) -> str:
