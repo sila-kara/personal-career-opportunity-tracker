@@ -3,3 +3,7 @@ numpy>=1.26.0
 scikit-learn>=1.4.0
 PyYAML>=6.0.0
 openpyxl>=3.1.0
+streamlit>=1.35.0
+
+# Optional advanced semantic matching:
+# sentence-transformers>=3.0.0

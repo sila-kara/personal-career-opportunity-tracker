@@ -1,7 +1,18 @@
 """Train the optional feedback model and export relevance predictions."""
 
-from config import FEEDBACK_PATH, FEEDBACK_PREDICTIONS_PATH, JOBS_PATH, PROFILE_PATH
+from config import (
+    FEEDBACK_MODEL_REPORT_PATH,
+    FEEDBACK_PATH,
+    FEEDBACK_PREDICTIONS_PATH,
+    JOBS_PATH,
+    PROFILE_PATH,
+)
 from data_loader import load_feedback, load_jobs, load_profile, merge_feedback
+from feedback_evaluation import (
+    evaluate_with_leave_one_out,
+    format_evaluation_report,
+    save_evaluation_report,
+)
 from feedback_model import (
     predict_relevance,
     prepare_training_data,
@@ -37,14 +48,18 @@ def main() -> None:
     training_data = prepare_training_data(scored_jobs)
     classifier = train_feedback_classifier(training_data)
     predictions = predict_relevance(scored_jobs, classifier)
+    metrics = evaluate_with_leave_one_out(training_data)
+    report = format_evaluation_report(metrics)
 
     columns = [col for col in PREDICTION_COLUMNS if col in predictions.columns]
     FEEDBACK_PREDICTIONS_PATH.parent.mkdir(parents=True, exist_ok=True)
     predictions[columns].to_csv(FEEDBACK_PREDICTIONS_PATH, index=False)
+    save_evaluation_report(report, FEEDBACK_MODEL_REPORT_PATH)
 
     print("Feedback model training complete.")
     print(f"Feedback-labeled jobs used: {len(training_data)}")
     print(f"Predictions output: {FEEDBACK_PREDICTIONS_PATH}")
+    print(f"Evaluation report: {FEEDBACK_MODEL_REPORT_PATH}")
     print("\nTop predicted relevant jobs:")
     preview_columns = [
         "predicted_relevance_score",

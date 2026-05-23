@@ -31,7 +31,7 @@ This is not just a scraping or automation project. The core system uses NLP and 
 ## Current Features
 
 - Stores a personal career profile in `profile.yaml`
-- Reads job postings from `data/sample_jobs.csv`
+- Reads active job postings from `data/jobs.csv`
 - Cleans and preprocesses job/profile text
 - Calculates TF-IDF cosine similarity
 - Adds bonuses for preferred keywords, locations, roles, and job types
@@ -39,8 +39,12 @@ This is not just a scraping or automation project. The core system uses NLP and 
 - Tracks user feedback through `data/feedback.csv`
 - Produces a feedback-trained relevance score
 - Combines rule-based and ML scores into `hybrid_score_v2`
+- Produces a model evaluation report
 - Performs skill gap analysis
 - Clusters job postings with KMeans
+- Suggests high-value jobs to review next with an active-learning style feedback queue
+- Provides an optional sentence-transformers semantic matching script
+- Includes a Streamlit dashboard
 - Exports ranked results to CSV, Markdown, and Google Sheets-ready CSV
 - Includes unit tests for the main pipeline components
 
@@ -52,6 +56,7 @@ personal-career-opportunity-tracker/
   requirements.txt
   profile.yaml
   data/
+    jobs.csv
     sample_jobs.csv
     feedback.csv
   src/
@@ -62,16 +67,25 @@ personal-career-opportunity-tracker/
     matcher.py
     hybrid_scorer.py
     feedback_model.py
+    feedback_evaluation.py
+    feedback_learning.py
     train_feedback_model.py
+    semantic_matcher.py
+    run_semantic_matching.py
     clustering.py
     exporter.py
     update_feedback.py
     add_job.py
+    reset_jobs_from_sample.py
+    dashboard_data.py
   outputs/
     matched_jobs.csv
     matched_jobs.md
     google_sheets_ready.csv
     feedback_model_predictions.csv
+    feedback_model_report.txt
+    feedback_review_queue.csv
+    semantic_matches.csv
   tests/
     test_add_job.py
     test_clustering.py
@@ -86,7 +100,13 @@ personal-career-opportunity-tracker/
 
 ## Input Data
 
-The main job dataset is stored in:
+The active job dataset is stored in:
+
+```text
+data/jobs.csv
+```
+
+The sample dataset is stored separately:
 
 ```text
 data/sample_jobs.csv
@@ -228,6 +248,19 @@ Running the feedback model script creates:
 
 ```text
 outputs/feedback_model_predictions.csv
+outputs/feedback_model_report.txt
+```
+
+The main pipeline also creates an active-learning style feedback queue:
+
+```text
+outputs/feedback_review_queue.csv
+```
+
+If the optional sentence-transformers workflow is installed and run, it creates:
+
+```text
+outputs/semantic_matches.csv
 ```
 
 The Google Sheets-ready file keeps feedback columns near the front so it can be imported, edited, and exported back into the project.
@@ -256,6 +289,19 @@ Train the optional feedback model and export predictions:
 
 ```bash
 python src/train_feedback_model.py
+```
+
+Run the optional semantic matching workflow:
+
+```bash
+pip install sentence-transformers
+python src/run_semantic_matching.py
+```
+
+Launch the Streamlit dashboard:
+
+```bash
+streamlit run app.py
 ```
 
 ## Google Sheets Feedback Workflow
@@ -309,6 +355,12 @@ Then re-run:
 python src/main.py
 ```
 
+Reset the active jobs dataset from the sample dataset:
+
+```bash
+python src/reset_jobs_from_sample.py
+```
+
 ## Sample Output
 
 Example terminal preview:
@@ -337,8 +389,11 @@ Current test coverage includes:
 - Feedback CSV updates
 - Manual job entry
 - Feedback classifier
+- Feedback model evaluation
+- Feedback review queue
 - KMeans clustering
 - Hybrid score calculation
+- Dashboard data filtering
 
 Run all tests:
 
@@ -348,10 +403,7 @@ python -m unittest discover -s tests
 
 ## Future Improvements
 
-- Add a Streamlit dashboard
 - Add optional Google Sheets API integration
-- Add sentence-transformers embeddings for stronger semantic similarity
-- Add model evaluation reports with precision, recall, F1 score, and confusion matrix
 - Add real job sources that allow scraping or provide RSS feeds
 - Add more feedback data and compare classifier performance over time
 - Add visual charts for score distributions and cluster summaries
@@ -364,7 +416,10 @@ The project is intentionally modular and beginner-friendly:
 - `preprocessing.py`: cleans text
 - `matcher.py`: computes similarity, rule-based score, explanations, and skill gaps
 - `feedback_model.py`: trains a simple feedback classifier
+- `feedback_evaluation.py`: evaluates the feedback classifier
+- `feedback_learning.py`: suggests useful jobs to label next
 - `hybrid_scorer.py`: combines explainable and learned scores
+- `semantic_matcher.py`: optional sentence-transformers semantic similarity
 - `clustering.py`: groups similar jobs using unsupervised learning
 - `exporter.py`: saves outputs
 - `main.py`: connects the full pipeline

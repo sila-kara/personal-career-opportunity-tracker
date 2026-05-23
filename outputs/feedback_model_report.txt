@@ -1,0 +1,21 @@
+Feedback Model Evaluation
+=========================
+
+Note: This evaluation is experimental because the feedback dataset is small.
+
+Training examples: 5
+Evaluated folds: 5
+Relevant examples: 3
+Rejected examples: 2
+
+Cross-validation strategy: Leave-One-Out CV
+
+Metrics:
+- Accuracy: 0.40
+- Precision: 0.50
+- Recall: 0.67
+- F1 Score: 0.57
+
+Confusion Matrix (labels: rejected=0, relevant=1):
+[[TN=0, FP=2],
+ [FN=1, TP=2]]
