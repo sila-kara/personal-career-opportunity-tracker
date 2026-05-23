@@ -133,13 +133,13 @@ Example terminal preview:
 
 ```text
 Career opportunity matching complete.
-Jobs processed: 10
+Jobs processed: 25
 
 Top matches:
- match_score                   title              company          location
-       55.80 Machine Learning Intern DataBridge Analytics            Remote
-       39.82     Data Science Intern    BrightRetail Labs          Istanbul
-       34.68       AI Product Intern         EduFuture AI            Remote
+ match_score                           title              company         location
+       43.68     Software Development Intern         FinCore Tech Hybrid - Kocaeli
+       36.34         Machine Learning Intern DataBridge Analytics           Remote
+       32.42             Data Science Intern    BrightRetail Labs         Istanbul
 ```
 
 The CSV output contains the full ranked dataset, including similarity score, bonuses, penalties, matched keywords, and avoid keywords found.
