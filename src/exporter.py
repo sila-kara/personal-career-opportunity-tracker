@@ -14,8 +14,11 @@ DISPLAY_COLUMNS = [
     "similarity_score",
     "location_penalty",
     "job_type_penalty",
+    "feedback_adjustment",
+    "user_feedback",
     "matched_keywords",
     "avoid_keywords_found",
+    "notes",
     "link",
 ]
 

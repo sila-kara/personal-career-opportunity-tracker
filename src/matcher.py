@@ -11,6 +11,13 @@ from sklearn.metrics.pairwise import cosine_similarity
 from preprocessing import clean_text
 
 
+FEEDBACK_ADJUSTMENTS = {
+    "liked": 0.10,
+    "maybe": 0.03,
+    "rejected": -0.30,
+}
+
+
 def _flatten_profile_value(value: Any) -> list[str]:
     """Turn nested profile values into a flat list of readable strings."""
     if isinstance(value, dict):
@@ -90,6 +97,16 @@ def calculate_similarity_scores(profile_text: str, job_texts: pd.Series) -> np.n
     return similarities
 
 
+def get_feedback_adjustment(feedback_value: str) -> float:
+    """Convert user feedback into a simple score adjustment.
+
+    This is the first step toward personalization from feedback. Later, these
+    labels can become training data for a relevance classifier.
+    """
+    normalized_feedback = clean_text(feedback_value)
+    return FEEDBACK_ADJUSTMENTS.get(normalized_feedback, 0.0)
+
+
 def score_jobs(profile: dict, jobs: pd.DataFrame) -> pd.DataFrame:
     """Rank jobs using an explainable hybrid scoring formula.
 
@@ -102,6 +119,7 @@ def score_jobs(profile: dict, jobs: pd.DataFrame) -> pd.DataFrame:
     - up to 5% bonus for preferred job type
     - up to 25% penalty for non-preferred job type
     - up to 20% penalty for avoid keywords
+    - +10% for liked, +3% for maybe, or -30% for rejected feedback
 
     The result is clipped between 0 and 100 for readability.
     """
@@ -122,6 +140,7 @@ def score_jobs(profile: dict, jobs: pd.DataFrame) -> pd.DataFrame:
         title_text = str(row["title"])
         location_text = str(row["location"])
         job_type_text = str(row["job_type"])
+        feedback_value = str(row.get("user_feedback", ""))
 
         matched_keywords = find_matching_terms(full_text, like_keywords)
         avoid_matches = find_matching_terms(full_text, avoid_keywords)
@@ -138,6 +157,7 @@ def score_jobs(profile: dict, jobs: pd.DataFrame) -> pd.DataFrame:
         role_bonus = 0.10 if role_matches else 0.0
         job_type_bonus = 0.05 if job_type_matches else 0.0
         job_type_penalty = 0.25 if not job_type_matches else 0.0
+        feedback_adjustment = get_feedback_adjustment(feedback_value)
 
         raw_score = (
             row["similarity_score"] * 0.60
@@ -145,6 +165,7 @@ def score_jobs(profile: dict, jobs: pd.DataFrame) -> pd.DataFrame:
             + location_bonus
             + role_bonus
             + job_type_bonus
+            + feedback_adjustment
             - location_penalty
             - job_type_penalty
             - avoid_penalty
@@ -161,6 +182,7 @@ def score_jobs(profile: dict, jobs: pd.DataFrame) -> pd.DataFrame:
                 "role_bonus": round(role_bonus * 100, 2),
                 "job_type_bonus": round(job_type_bonus * 100, 2),
                 "job_type_penalty": round(job_type_penalty * 100, 2),
+                "feedback_adjustment": round(feedback_adjustment * 100, 2),
                 "match_score": round(final_score, 2),
                 "matched_keywords": ", ".join(matched_keywords),
                 "avoid_keywords_found": ", ".join(avoid_matches),

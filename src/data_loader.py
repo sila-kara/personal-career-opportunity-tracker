@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
-from config import REQUIRED_JOB_COLUMNS
+from config import REQUIRED_FEEDBACK_COLUMNS, REQUIRED_JOB_COLUMNS
 
 
 def load_profile(profile_path: Path) -> dict:
@@ -36,3 +36,42 @@ def load_jobs(jobs_path: Path) -> pd.DataFrame:
         )
 
     return jobs.fillna("")
+
+
+def load_feedback(feedback_path: Path) -> pd.DataFrame:
+    """Load optional user feedback from CSV.
+
+    Feedback is kept separate from generated outputs so it is not lost when the
+    ranking pipeline runs again.
+    """
+    if not feedback_path.exists():
+        return pd.DataFrame(columns=REQUIRED_FEEDBACK_COLUMNS)
+
+    feedback = pd.read_csv(feedback_path)
+    missing_columns = [
+        col for col in REQUIRED_FEEDBACK_COLUMNS if col not in feedback.columns
+    ]
+
+    if missing_columns:
+        raise ValueError(
+            "Feedback CSV is missing required columns: " + ", ".join(missing_columns)
+        )
+
+    return feedback[REQUIRED_FEEDBACK_COLUMNS].fillna("")
+
+
+def merge_feedback(jobs: pd.DataFrame, feedback: pd.DataFrame) -> pd.DataFrame:
+    """Attach user feedback to jobs using the job link as a stable key."""
+    if feedback.empty:
+        jobs = jobs.copy()
+        jobs["user_feedback"] = ""
+        jobs["notes"] = ""
+        return jobs
+
+    feedback = feedback.drop_duplicates(subset=["link"], keep="last")
+    jobs_with_feedback = jobs.merge(feedback, on="link", how="left")
+    jobs_with_feedback[["user_feedback", "notes"]] = jobs_with_feedback[
+        ["user_feedback", "notes"]
+    ].fillna("")
+
+    return jobs_with_feedback
