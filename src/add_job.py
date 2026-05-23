@@ -9,6 +9,15 @@ import pandas as pd
 from config import JOBS_PATH, REQUIRED_JOB_COLUMNS
 
 
+ALLOWED_JOB_TYPES = {
+    "Internship",
+    "Long-term Internship",
+    "Part-time",
+    "Full-time",
+    "Other",
+}
+
+
 def build_job_record(args: argparse.Namespace) -> dict:
     """Create a job record in the same structure as data/sample_jobs.csv."""
     return {
@@ -31,6 +40,18 @@ def validate_job_record(job_record: dict) -> None:
 
     if missing_values:
         raise ValueError("Missing required values: " + ", ".join(missing_values))
+
+    if job_record["job_type"] not in ALLOWED_JOB_TYPES:
+        valid_types = ", ".join(sorted(ALLOWED_JOB_TYPES))
+        raise ValueError(f"Invalid job_type '{job_record['job_type']}'. Use: {valid_types}.")
+
+    if not str(job_record["link"]).startswith(("http://", "https://")):
+        raise ValueError("Job link must start with http:// or https://.")
+
+    try:
+        date.fromisoformat(str(job_record["date_found"]))
+    except ValueError as error:
+        raise ValueError("date_found must use YYYY-MM-DD format.") from error
 
 
 def add_job_to_csv(job_record: dict, jobs_path: Path = JOBS_PATH) -> pd.DataFrame:

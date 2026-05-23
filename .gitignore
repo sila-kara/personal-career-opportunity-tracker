@@ -2,3 +2,8 @@ __pycache__/
 *.py[cod]
 .venv/
 .DS_Store
+.env
+*.pem
+*.key
+credentials*.json
+token*.json

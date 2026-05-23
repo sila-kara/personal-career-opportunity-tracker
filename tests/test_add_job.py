@@ -74,6 +74,42 @@ class TestAddJob(unittest.TestCase):
             with self.assertRaises(ValueError):
                 add_job_to_csv(job_record, jobs_path)
 
+    def test_add_job_to_csv_rejects_invalid_link(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            jobs_path = Path(temp_dir) / "jobs.csv"
+            pd.DataFrame(columns=REQUIRED_JOB_COLUMNS).to_csv(jobs_path, index=False)
+            job_record = {
+                "title": "Data Intern",
+                "company": "Example Co",
+                "location": "Remote",
+                "job_type": "Internship",
+                "description": "Use Python and SQL.",
+                "link": "example.com/job",
+                "source": "Test",
+                "date_found": "2026-05-23",
+            }
+
+            with self.assertRaises(ValueError):
+                add_job_to_csv(job_record, jobs_path)
+
+    def test_add_job_to_csv_rejects_invalid_date(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            jobs_path = Path(temp_dir) / "jobs.csv"
+            pd.DataFrame(columns=REQUIRED_JOB_COLUMNS).to_csv(jobs_path, index=False)
+            job_record = {
+                "title": "Data Intern",
+                "company": "Example Co",
+                "location": "Remote",
+                "job_type": "Internship",
+                "description": "Use Python and SQL.",
+                "link": "https://example.com/job",
+                "source": "Test",
+                "date_found": "23-05-2026",
+            }
+
+            with self.assertRaises(ValueError):
+                add_job_to_csv(job_record, jobs_path)
+
 
 if __name__ == "__main__":
     unittest.main()

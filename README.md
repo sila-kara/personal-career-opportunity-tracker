@@ -408,6 +408,16 @@ python -m unittest discover -s tests
 - Add more feedback data and compare classifier performance over time
 - Add visual charts for score distributions and cluster summaries
 
+## Deployment
+
+The Streamlit dashboard can be launched locally with:
+
+```bash
+streamlit run app.py
+```
+
+Before public deployment, review `profile.yaml`, `data/jobs.csv`, and `data/feedback.csv` for private information. See `DEPLOYMENT.md` for deployment notes.
+
 ## Notes
 
 The project is intentionally modular and beginner-friendly:

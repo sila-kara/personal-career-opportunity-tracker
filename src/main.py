@@ -48,6 +48,7 @@ def main() -> None:
     print("\nTop matches:")
 
     preview_columns = [
+        "hybrid_score_v3",
         "hybrid_score_v2",
         "match_score",
         "title",

@@ -34,3 +34,22 @@ def filter_dashboard_data(
     filtered_jobs = filtered_jobs[filtered_jobs[score_column] >= min_score]
 
     return filtered_jobs.reset_index(drop=True)
+
+
+def load_text_report(report_path: Path) -> str:
+    """Load a text report for dashboard display."""
+    if not report_path.exists():
+        return ""
+
+    return report_path.read_text(encoding="utf-8")
+
+
+def parse_metric_from_report(report: str, metric_name: str) -> str:
+    """Extract a metric value from a text report."""
+    prefix = f"- {metric_name}:"
+
+    for line in report.splitlines():
+        if line.startswith(prefix):
+            return line.replace(prefix, "").strip()
+
+    return "N/A"

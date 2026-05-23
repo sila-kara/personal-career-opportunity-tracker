@@ -11,7 +11,12 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(PROJECT_ROOT / "src"))
 
-from dashboard_data import filter_dashboard_data, load_dashboard_data
+from dashboard_data import (
+    filter_dashboard_data,
+    load_dashboard_data,
+    load_text_report,
+    parse_metric_from_report,
+)
 
 
 class TestDashboardData(unittest.TestCase):
@@ -51,6 +56,18 @@ class TestDashboardData(unittest.TestCase):
 
         self.assertEqual(len(result), 1)
         self.assertEqual(result.iloc[0]["title"], "Data Intern")
+
+    def test_load_text_report_returns_empty_string_when_missing(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            report_path = Path(temp_dir) / "missing.txt"
+
+            self.assertEqual(load_text_report(report_path), "")
+
+    def test_parse_metric_from_report_extracts_metric_value(self):
+        report = "- Accuracy: 0.75\n- Precision: 0.80\n"
+
+        self.assertEqual(parse_metric_from_report(report, "Accuracy"), "0.75")
+        self.assertEqual(parse_metric_from_report(report, "Recall"), "N/A")
 
 
 if __name__ == "__main__":
