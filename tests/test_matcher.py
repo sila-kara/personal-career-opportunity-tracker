@@ -11,7 +11,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(PROJECT_ROOT / "src"))
 
 from matcher import (
+    analyze_skill_gap,
     build_match_reason,
+    expand_skill_terms,
     find_matching_terms,
     get_feedback_adjustment,
     score_jobs,
@@ -33,6 +35,23 @@ class TestMatcher(unittest.TestCase):
         self.assertEqual(get_feedback_adjustment("rejected"), -0.30)
         self.assertEqual(get_feedback_adjustment(""), 0.0)
 
+    def test_expand_skill_terms_adds_aliases(self):
+        result = expand_skill_terms(["Microsoft Excel", "natural language processing"])
+
+        self.assertIn("Excel", result)
+        self.assertIn("NLP", result)
+
+    def test_analyze_skill_gap_finds_profile_and_missing_skills(self):
+        text = "Use Python, SQL, Docker, and AWS for data pipelines."
+        profile_skills = ["Python", "SQL"]
+
+        result = analyze_skill_gap(text, profile_skills)
+
+        self.assertEqual(result["profile_skills_found"], ["Python", "SQL"])
+        self.assertIn("Docker", result["missing_skills"])
+        self.assertIn("AWS", result["missing_skills"])
+        self.assertGreater(result["skill_match_rate"], 0)
+
     def test_build_match_reason_explains_positive_and_negative_signals(self):
         result = build_match_reason(
             matched_keywords=["Python", "SQL", "data science"],
@@ -41,9 +60,13 @@ class TestMatcher(unittest.TestCase):
             role_matches=["Data Science Intern"],
             job_type_matches=["Internship"],
             feedback_value="liked",
+            profile_skills_found=["Python", "SQL"],
+            missing_skills=["Docker"],
         )
 
         self.assertIn("Matches preferred keywords: Python, SQL, data science", result)
+        self.assertIn("Profile skills found: Python, SQL", result)
+        self.assertIn("Possible skill gaps: Docker", result)
         self.assertIn("Location fits preference: Remote", result)
         self.assertIn("Title matches target role: Data Science Intern", result)
         self.assertIn("Job type fits preference: Internship", result)
@@ -98,6 +121,8 @@ class TestMatcher(unittest.TestCase):
         self.assertEqual(remote_row["location_penalty"], 0.0)
         self.assertEqual(remote_row["job_type_penalty"], 0.0)
         self.assertEqual(remote_row["feedback_adjustment"], 10.0)
+        self.assertIn("Python", remote_row["profile_skills_found"])
+        self.assertGreater(remote_row["skill_match_rate"], 0)
         self.assertEqual(berlin_row["location_penalty"], 25.0)
         self.assertEqual(berlin_row["job_type_penalty"], 25.0)
         self.assertEqual(berlin_row["feedback_adjustment"], -30.0)

@@ -17,6 +17,56 @@ FEEDBACK_ADJUSTMENTS = {
     "rejected": -0.30,
 }
 
+TECHNICAL_SKILL_TERMS = [
+    "Python",
+    "C++",
+    "Java",
+    "JavaScript",
+    "SQL",
+    "Dart",
+    "Flutter",
+    "pandas",
+    "numpy",
+    "scikit-learn",
+    "TensorFlow",
+    "PyTorch",
+    "machine learning",
+    "deep learning",
+    "natural language processing",
+    "NLP",
+    "data analysis",
+    "data visualization",
+    "business analytics",
+    "Power BI",
+    "Tableau",
+    "Excel",
+    "Gurobi",
+    "Arena",
+    "optimization",
+    "simulation",
+    "algorithms",
+    "data structures",
+    "software development",
+    "mobile application",
+    "cybersecurity",
+    "Git",
+    "Docker",
+    "AWS",
+    "cloud",
+    "API",
+    "ETL",
+    "dashboard",
+]
+
+SKILL_ALIASES = {
+    "algorithms and data structures": ["algorithms", "data structures"],
+    "artificial intelligence": ["AI"],
+    "machine learning": ["ML"],
+    "microsoft excel": ["Excel"],
+    "mobile application development": ["mobile application"],
+    "natural language processing": ["NLP"],
+}
+
 
 def _flatten_profile_value(value: Any) -> list[str]:
     """Turn nested profile values into a flat list of readable strings."""
@@ -77,6 +127,65 @@ def find_matching_terms(text: str, terms: list[str]) -> list[str]:
     return matches
 
 
+def expand_skill_terms(skills: list[str]) -> list[str]:
+    """Add common aliases so skill matching catches equivalent phrases."""
+    expanded_terms = []
+    seen_terms = set()
+
+    for skill in skills:
+        terms = [skill] + SKILL_ALIASES.get(clean_text(skill), [])
+        for term in terms:
+            cleaned_term = clean_text(term)
+            if cleaned_term and cleaned_term not in seen_terms:
+                expanded_terms.append(term)
+                seen_terms.add(cleaned_term)
+
+    return expanded_terms
+
+
+def analyze_skill_gap(text: str, profile_skills: list[str]) -> dict:
+    """Compare job skill signals with the candidate's profile skills."""
+    candidate_skill_terms = expand_skill_terms(profile_skills)
+    candidate_skill_keys = {clean_text(skill) for skill in candidate_skill_terms}
+    skill_catalog = expand_skill_terms(TECHNICAL_SKILL_TERMS + profile_skills)
+
+    profile_skills_found = find_profile_skill_matches(text, profile_skills)
+    job_skills_found = find_matching_terms(text, skill_catalog)
+    missing_skills = [
+        skill for skill in job_skills_found if clean_text(skill) not in candidate_skill_keys
+    ]
+
+    denominator = len(profile_skills_found) + len(missing_skills)
+    skill_match_rate = len(profile_skills_found) / denominator if denominator else 0.0
+
+    return {
+        "profile_skills_found": profile_skills_found,
+        "job_skills_found": job_skills_found,
+        "missing_skills": missing_skills,
+        "skill_match_rate": skill_match_rate,
+    }
+
+
+def find_profile_skill_matches(text: str, profile_skills: list[str]) -> list[str]:
+    """Find profile skills without double-counting their aliases."""
+    matches = []
+    seen_terms = set()
+
+    for skill in profile_skills:
+        skill_terms = [skill] + SKILL_ALIASES.get(clean_text(skill), [])
+        matched_terms = find_matching_terms(text, skill_terms)
+        if not matched_terms:
+            continue
+
+        preferred_match = skill if skill in matched_terms else matched_terms[0]
+        cleaned_match = clean_text(preferred_match)
+        if cleaned_match not in seen_terms:
+            matches.append(preferred_match)
+            seen_terms.add(cleaned_match)
+
+    return matches
+
+
 def _contains_term(cleaned_text: str, cleaned_term: str) -> bool:
     """Match complete words/phrases so short terms like AI do not match campaign."""
     pattern = rf"(?<![a-z0-9+#]){re.escape(cleaned_term)}(?![a-z0-9+#])"
@@ -114,13 +223,25 @@ def build_match_reason(
     role_matches: list[str],
     job_type_matches: list[str],
     feedback_value: str,
+    profile_skills_found: list[str] | None = None,
+    missing_skills: list[str] | None = None,
 ) -> str:
     """Build a short human-readable explanation for a job score."""
     reasons = []
+    profile_skills_found = profile_skills_found or []
+    missing_skills = missing_skills or []
 
     if matched_keywords:
         top_keywords = ", ".join(matched_keywords[:4])
         reasons.append(f"Matches preferred keywords: {top_keywords}")
+
+    if profile_skills_found:
+        top_skills = ", ".join(profile_skills_found[:4])
+        reasons.append(f"Profile skills found: {top_skills}")
+
+    if missing_skills:
+        top_missing = ", ".join(missing_skills[:4])
+        reasons.append(f"Possible skill gaps: {top_missing}")
 
     if location_matches:
         reasons.append(f"Location fits preference: {location_matches[0]}")
@@ -171,6 +292,7 @@ def score_jobs(profile: dict, jobs: pd.DataFrame) -> pd.DataFrame:
     preferred_locations = get_profile_list(profile, "preferred_locations")
     target_roles = get_profile_list(profile, "target_roles")
     job_type_preferences = get_profile_list(profile, "job_type_preference")
+    profile_skills = get_profile_list(profile, "skills")
 
     scored_rows = []
 
@@ -186,6 +308,7 @@ def score_jobs(profile: dict, jobs: pd.DataFrame) -> pd.DataFrame:
         location_matches = find_matching_terms(location_text, preferred_locations)
         role_matches = find_matching_terms(title_text, target_roles)
         job_type_matches = find_matching_terms(job_type_text, job_type_preferences)
+        skill_gap = analyze_skill_gap(full_text, profile_skills)
         match_reason = build_match_reason(
             matched_keywords=matched_keywords,
             avoid_matches=avoid_matches,
@@ -193,6 +316,8 @@ def score_jobs(profile: dict, jobs: pd.DataFrame) -> pd.DataFrame:
             role_matches=role_matches,
             job_type_matches=job_type_matches,
             feedback_value=feedback_value,
+            profile_skills_found=skill_gap["profile_skills_found"],
+            missing_skills=skill_gap["missing_skills"],
         )
 
         keyword_bonus = min(len(matched_keywords) / max(len(like_keywords), 1), 1.0) * 0.15
@@ -232,6 +357,10 @@ def score_jobs(profile: dict, jobs: pd.DataFrame) -> pd.DataFrame:
                 "feedback_adjustment": round(feedback_adjustment * 100, 2),
                 "match_score": round(final_score, 2),
                 "match_reason": match_reason,
+                "profile_skills_found": ", ".join(skill_gap["profile_skills_found"]),
+                "job_skills_found": ", ".join(skill_gap["job_skills_found"]),
+                "missing_skills": ", ".join(skill_gap["missing_skills"]),
+                "skill_match_rate": round(skill_gap["skill_match_rate"] * 100, 2),
                 "matched_keywords": ", ".join(matched_keywords),
                 "avoid_keywords_found": ", ".join(avoid_matches),
             }
