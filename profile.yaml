@@ -1,0 +1,59 @@
+education:
+  degree: "Computer Engineering student"
+  level: "Undergraduate"
+  focus:
+    - "machine learning"
+    - "data science"
+    - "natural language processing"
+
+target_roles:
+  - "Machine Learning Intern"
+  - "Data Science Intern"
+  - "NLP Intern"
+  - "AI Product Intern"
+  - "Junior Data Analyst"
+
+skills:
+  - "Python"
+  - "pandas"
+  - "numpy"
+  - "scikit-learn"
+  - "machine learning"
+  - "natural language processing"
+  - "SQL"
+  - "data visualization"
+  - "statistics"
+
+preferred_industries:
+  - "artificial intelligence"
+  - "education technology"
+  - "health technology"
+  - "analytics"
+  - "retail technology"
+
+preferred_locations:
+  - "Remote"
+  - "Istanbul"
+  - "Hybrid - Istanbul"
+
+job_type_preference:
+  - "Internship"
+
+keywords_like:
+  - "machine learning"
+  - "NLP"
+  - "natural language processing"
+  - "recommendation"
+  - "Python"
+  - "scikit-learn"
+  - "pandas"
+  - "model evaluation"
+  - "text classification"
+  - "data science"
+
+keywords_avoid:
+  - "sales"
+  - "cold calling"
+  - "manual data entry"
+  - "unpaid"
+  - "marketing"
