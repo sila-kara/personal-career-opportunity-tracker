@@ -8,6 +8,7 @@ from config import (
     OUTPUT_MD_PATH,
     PROFILE_PATH,
 )
+from clustering import add_job_clusters
 from data_loader import load_feedback, load_jobs, load_profile, merge_feedback
 from exporter import export_google_sheets_ready_csv, export_to_csv, export_to_markdown
 from matcher import score_jobs
@@ -23,6 +24,7 @@ def main() -> None:
     jobs = add_clean_text_columns(jobs)
     jobs = merge_feedback(jobs, feedback)
     ranked_jobs = score_jobs(profile, jobs)
+    ranked_jobs = add_job_clusters(ranked_jobs)
 
     export_to_csv(ranked_jobs, OUTPUT_CSV_PATH)
     export_to_markdown(ranked_jobs, OUTPUT_MD_PATH)
@@ -35,7 +37,7 @@ def main() -> None:
     print(f"Google Sheets-ready output: {GOOGLE_SHEETS_READY_PATH}")
     print("\nTop matches:")
 
-    preview_columns = ["match_score", "title", "company", "location"]
+    preview_columns = ["match_score", "title", "company", "location", "cluster_label"]
     print(ranked_jobs[preview_columns].head(5).to_string(index=False))
 
 
